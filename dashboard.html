@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduSense Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f7fb;
+    --surface: rgba(255,255,255,0.84);
+    --text: #0f172a;
+    --muted: #617082;
+    --accent: #2563eb;
+    --accent-dark: #1d4ed8;
+    --ink: #0f172a;
+    --teal: #0f9f8c;
+    --rose: #d9485f;
+    --line: rgba(15,23,42,0.1);
+    --container: 1200px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    font-family: "Manrope", sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(circle at top left, rgba(37,99,235,0.14), transparent 26%),
+      radial-gradient(circle at 90% 10%, rgba(15,159,140,0.1), transparent 20%),
+      linear-gradient(180deg, #f9fbff 0%, var(--bg) 48%, #edf2f8 100%);
+  }
+  a { color: inherit; text-decoration: none; }
+  button, input { font: inherit; }
+  .container { width: min(calc(100% - 2rem), var(--container)); margin: 0 auto; }
+  .header {
+    position: sticky; top: 0; z-index: 20;
+    backdrop-filter: blur(18px);
+    background: rgba(244,247,251,0.8);
+    border-bottom: 1px solid rgba(15,23,42,0.06);
+  }
+  .nav {
+    min-height: 76px;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 0.85rem; font-weight: 800;
+  }
+  .brand-mark {
+    width: 44px; height: 44px; border-radius: 14px;
+    display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--ink), var(--accent));
+    color: #fff; font-family: "Sora", sans-serif;
+  }
+  .brand-copy strong { display: block; }
+  .brand-copy span {
+    display: block; font-size: 0.76rem; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .nav-links { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .nav-link, .nav-cta, .tab-btn, .analyze-btn, .filter-btn, .page-btn, .export-btn {
+    transition: all 180ms ease;
+  }
+  .nav-link {
+    padding: 0.8rem 1rem; border-radius: 999px; color: var(--muted); font-weight: 700;
+  }
+  .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.9); color: var(--text); }
+  .nav-cta {
+    padding: 0.95rem 1.2rem; border-radius: 999px;
+    background: var(--ink); color: #fff; font-weight: 800;
+  }
+  .hero, .panel, .results, .chart-card, .table-card, .stat {
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.7);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 18px 40px rgba(15,23,42,0.08);
+  }
+  .hero, .panel, .results { border-radius: 32px; }
+  main { padding: 3rem 0 5rem; }
+  .hero-grid {
+    display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr); gap: 1.25rem;
+  }
+  .hero { padding: clamp(2rem, 5vw, 3.25rem); }
+  .eyebrow, .meta {
+    display: inline-block; color: var(--accent-dark); font-size: 0.78rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  h1, h2, h3, h4 { font-family: "Sora", sans-serif; letter-spacing: -0.04em; }
+  h1 { margin-top: 1rem; font-size: clamp(2.4rem, 5vw, 4rem); line-height: 0.98; max-width: 12ch; }
+  .hero p, .section-copy p, .side-card p, .step p, .stat p { color: var(--muted); line-height: 1.8; }
+  .hero p { margin-top: 1rem; max-width: 60ch; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.5rem; }
+  .chips span {
+    padding: 0.8rem 1rem; border-radius: 999px; background: rgba(255,255,255,0.88);
+    border: 1px solid rgba(15,23,42,0.08); font-weight: 800;
+  }
+  .side-card {
+    border-radius: 32px;
+    padding: 1.5rem;
+    background:
+      radial-gradient(circle at top right, rgba(37,99,235,0.12), transparent 32%),
+      linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.78));
+    box-shadow: 0 18px 40px rgba(15,23,42,0.08);
+  }
+  .side-card article {
+    margin-top: 1rem; padding: 1rem; border-radius: 20px;
+    background: rgba(255,255,255,0.88); border: 1px solid rgba(15,23,42,0.08);
+  }
+  section { margin-top: 2rem; }
+  .panel { padding: clamp(1.35rem, 4vw, 2rem); }
+  .section-head {
+    display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem;
+  }
+  .section-copy h2 { margin-top: 0.45rem; font-size: clamp(1.8rem, 4vw, 2.7rem); line-height: 1.02; }
+  .section-copy p { margin-top: 0.75rem; max-width: 46rem; }
+  .tabs {
+    display: inline-flex; gap: 0.5rem; padding: 0.4rem;
+    border-radius: 18px; background: rgba(255,255,255,0.88); border: 1px solid var(--line);
+  }
+  .tab-btn {
+    border: none; background: transparent; min-height: 44px; padding: 0 1rem;
+    border-radius: 14px; color: var(--muted); font-weight: 800; cursor: pointer;
+  }
+  .tab-btn.active {
+    background: linear-gradient(135deg, var(--ink), var(--accent));
+    color: #fff;
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .steps {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1rem;
+  }
+  .step {
+    padding: 1rem; border-radius: 20px; background: rgba(248,251,255,0.9); border: 1px solid rgba(15,23,42,0.07);
+  }
+  .step strong {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; border-radius: 12px;
+    background: rgba(37,99,235,0.1); color: var(--accent-dark); margin-bottom: 0.8rem;
+  }
+  .drop-zone {
+    position: relative; padding: 2rem 1.25rem; border-radius: 24px;
+    border: 1.5px dashed rgba(37,99,235,0.28); text-align: center;
+    background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(246,250,255,0.92));
+  }
+  .drop-zone.dragover { background: rgba(37,99,235,0.06); border-color: var(--accent); }
+  .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .drop-zone h3 { font-size: 1.15rem; }
+  .drop-zone p { margin-top: 0.55rem; color: var(--muted); line-height: 1.7; }
+  .file-picked {
+    display: none; align-items: center; justify-content: space-between; gap: 1rem;
+    margin-top: 1rem; padding: 0.95rem 1rem; border-radius: 18px;
+    background: rgba(15,159,140,0.08); border: 1px solid rgba(15,159,140,0.16);
+  }
+  .file-picked.show { display: flex; }
+  .file-picked span { color: #0c7b6d; font-weight: 800; }
+  .ghost-btn {
+    border: none; background: rgba(255,255,255,0.78); color: var(--muted);
+    min-height: 40px; padding: 0 0.9rem; border-radius: 12px; cursor: pointer; font-weight: 800;
+  }
+  .input-wrap input {
+    width: 100%; min-height: 56px; padding: 0 1rem; border-radius: 18px;
+    border: 1px solid var(--line); background: rgba(248,251,255,0.94); outline: none;
+  }
+  .input-wrap input:focus { border-color: rgba(37,99,235,0.34); box-shadow: 0 0 0 5px rgba(37,99,235,0.1); }
+  .analyze-btn, .export-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.7rem;
+    min-height: 54px; padding: 0 1.2rem; border-radius: 18px; border: none; cursor: pointer; font-weight: 800;
+  }
+  .analyze-btn {
+    width: 100%; margin-top: 1rem;
+    background: linear-gradient(135deg, var(--ink), var(--accent)); color: #fff;
+    box-shadow: 0 18px 40px rgba(37,99,235,0.22);
+  }
+  .analyze-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .spinner {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+    display: none; animation: spin 700ms linear infinite;
+  }
+  .analyze-btn.loading .btn-label { display: none; }
+  .analyze-btn.loading .spinner { display: block; }
+  .error {
+    display: none; margin-top: 1rem; padding: 1rem; border-radius: 18px;
+    background: rgba(217,72,95,0.08); border: 1px solid rgba(217,72,95,0.16);
+    color: #b4233c; line-height: 1.7;
+  }
+  #resultsSection { display: none; }
+  .results { padding: clamp(1.35rem, 4vw, 2rem); }
+  .results-top {
+    display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem;
+  }
+  .results-top p { margin-top: 0.65rem; color: var(--muted); line-height: 1.8; }
+  .export-btn {
+    background: rgba(255,255,255,0.9); border: 1px solid var(--line); color: var(--text);
+  }
+  .stats {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem;
+  }
+  .stat {
+    padding: 1.15rem; border-radius: 24px;
+  }
+  .stat span { display: block; color: var(--muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800; }
+  .stat strong { display: block; margin-top: 0.6rem; font-size: clamp(1.8rem, 4vw, 2.4rem); }
+  .stat p { margin-top: 0.35rem; font-size: 0.94rem; }
+  .suggestions-box {
+    margin-top: 1rem;
+    padding: 1.15rem;
+    border-radius: 24px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.9);
+  }
+  .suggestions-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: 0.8rem;
+    margin-bottom: 0.8rem;
+  }
+  .suggestions-head h3 {
+    font-size: 1.25rem;
+  }
+  .suggestions-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.8rem;
+  }
+  .suggestion-item {
+    padding: 0.9rem;
+    border-radius: 16px;
+    border: 1px solid rgba(15,23,42,0.08);
+    background: rgba(248,251,255,0.92);
+  }
+  .suggestion-item strong {
+    display: block;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-dark);
+  }
+  .suggestion-item p {
+    margin-top: 0.45rem;
+    color: var(--muted);
+    line-height: 1.7;
+    font-size: 0.95rem;
+  }
+  .results-grid {
+    display: grid; grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr); gap: 1rem; margin-top: 1rem;
+  }
+  .chart-card, .table-card { border-radius: 28px; padding: 1.25rem; }
+  .chart-card {
+    border: 1px solid var(--line); background: rgba(255,255,255,0.9);
+  }
+  .donut-wrap { display: grid; place-items: center; min-height: 250px; }
+  .donut {
+    position: relative; width: 220px; height: 220px; display: grid; place-items: center;
+  }
+  .donut svg { transform: rotate(-90deg); overflow: visible; }
+  .track { stroke: #e4ebf3; }
+  .segment {
+    stroke-linecap: round; stroke-dasharray: 0 999;
+    transition: stroke-dasharray 800ms ease, stroke-dashoffset 800ms ease;
+  }
+  .segment.pos { stroke: var(--teal); }
+  .segment.neg { stroke: var(--rose); }
+  .donut-center { position: absolute; text-align: center; }
+  .donut-center strong { display: block; font-size: 2rem; }
+  .donut-center span { display: block; margin-top: 0.2rem; color: var(--muted); font-weight: 700; }
+  .legend { display: grid; gap: 0.8rem; }
+  .legend-row {
+    display: grid; grid-template-columns: auto 80px minmax(0,1fr) 54px; gap: 0.75rem; align-items: center;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.pos { background: var(--teal); }
+  .dot.neg { background: var(--rose); }
+  .bar { height: 0.7rem; border-radius: 999px; background: #e4ebf3; overflow: hidden; }
+  .fill { width: 0; height: 100%; border-radius: inherit; transition: width 800ms ease; }
+  .fill.pos { background: linear-gradient(90deg, var(--teal), #2fc7b4); }
+  .fill.neg { background: linear-gradient(90deg, #c83d54, var(--rose)); }
+  .table-top {
+    display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem;
+  }
+  .filters { display: flex; flex-wrap: wrap; gap: 0.55rem; }
+  .filter-btn {
+    min-height: 42px; padding: 0 0.95rem; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--line); background: rgba(255,255,255,0.82); color: var(--muted); font-weight: 800;
+  }
+  .filter-btn.active { background: linear-gradient(135deg, var(--ink), var(--accent)); color: #fff; border-color: transparent; }
+  .table-scroll { overflow: auto; border-radius: 20px; border: 1px solid var(--line); }
+  table { width: 100%; border-collapse: collapse; min-width: 760px; background: rgba(255,255,255,0.9); }
+  th, td { padding: 0.95rem 1rem; text-align: left; border-bottom: 1px solid rgba(15,23,42,0.06); vertical-align: top; }
+  th {
+    color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800;
+    background: rgba(248,251,255,0.96);
+  }
+  td { line-height: 1.7; }
+  .feedback-cell {
+    max-width: 460px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .pill {
+    display: inline-flex; align-items: center; padding: 0.45rem 0.75rem;
+    border-radius: 999px; font-size: 0.8rem; font-weight: 800;
+  }
+  .pill.pos { background: rgba(15,159,140,0.1); color: #0c7b6d; }
+  .pill.neg { background: rgba(217,72,95,0.1); color: #b4233c; }
+  .pagination { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+  .page-btn {
+    min-width: 42px; height: 42px; border-radius: 14px; cursor: pointer;
+    border: 1px solid var(--line); background: rgba(255,255,255,0.86); color: var(--text); font-weight: 800;
+  }
+  .page-btn.active { background: linear-gradient(135deg, var(--ink), var(--accent)); color: #fff; border-color: transparent; }
+  .fade-up { animation: fadeUp 650ms ease both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-width: 1024px) {
+    .hero-grid, .results-grid, .stats { grid-template-columns: 1fr 1fr; }
+    .results-grid { grid-template-columns: 1fr; }
+    .suggestions-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 820px) {
+    .nav { min-height: auto; padding: 1rem 0; flex-wrap: wrap; }
+    .nav-links, .steps, .stats, .hero-grid { grid-template-columns: 1fr; width: 100%; }
+    .nav-links { display: grid; }
+    .suggestions-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .container { width: min(calc(100% - 1.25rem), var(--container)); }
+    .tabs { display: grid; width: 100%; }
+    .tab-btn, .nav-link, .nav-cta, .export-btn, .filter-btn { width: 100%; }
+    .results-top, .table-top, .section-head { align-items: stretch; }
+    .legend-row { grid-template-columns: auto 1fr; }
+    .legend-row .bar, .legend-row .pct { grid-column: span 2; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="container nav">
+    <a href="/" class="brand">
+      <span class="brand-mark">ES</span>
+      <span class="brand-copy"><strong>EduSense</strong><span>Feedback Intelligence</span></span>
+    </a>
+    <nav class="nav-links">
+      <a class="nav-link" href="/">Single Analysis</a>
+      <a class="nav-link active" href="/dashboard">Dashboard</a>
+      <a class="nav-cta" href="#resultsSection">View Results</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="hero-grid fade-up">
+    <div class="hero">
+      <span class="eyebrow">Batch Analysis</span>
+      <h1>Analyze entire feedback datasets in one polished view.</h1>
+      <p>Upload a CSV or paste a public Google Sheets link. EduSense detects the response column, scores each entry, and turns raw comments into a clean dashboard you can actually present.</p>
+      <div class="chips">
+        <span>CSV uploads</span>
+        <span>Google Sheets support</span>
+        <span>Export-ready results</span>
+      </div>
+    </div>
+    <aside class="side-card">
+      <span class="meta">Conversion Notes</span>
+      <article>
+        <strong>Build more trust</strong>
+        <p>Add a sample dataset download and one testimonial from an educator or department lead.</p>
+      </article>
+      <article>
+        <strong>Improve conversions</strong>
+        <p>Show a short before-and-after example of how the dashboard turns messy responses into useful insight.</p>
+      </article>
+    </aside>
+  </section>
+
+  <section class="panel fade-up">
+    <div class="section-head">
+      <div class="section-copy">
+        <span class="meta">Import Workflow</span>
+        <h2>Choose your input method</h2>
+        <p>The flow is simple on purpose: explain the steps, collect the source, then move directly into the results view.</p>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Import method">
+        <button class="tab-btn active" id="csvTab" type="button" onclick="switchTab('csv')">CSV Upload</button>
+        <button class="tab-btn" id="sheetsTab" type="button" onclick="switchTab('sheets')">Google Sheets</button>
+      </div>
+    </div>
+
+    <div class="tab-panel active" id="csvPanel">
+      <div class="steps">
+        <article class="step"><strong>1</strong><h4>Export responses</h4><p>Download your Google Forms or spreadsheet data as a CSV.</p></article>
+        <article class="step"><strong>2</strong><h4>Upload the file</h4><p>Drag it in or browse from your device.</p></article>
+        <article class="step"><strong>3</strong><h4>Review insights</h4><p>See totals, sentiment mix, and row-level results instantly.</p></article>
+      </div>
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="csvFile" accept=".csv" onchange="onFileChosen(this)">
+        <h3>Drop your CSV here or click to browse</h3>
+        <p>Best for Google Forms exports and survey response lists.</p>
+      </div>
+      <div class="file-picked" id="fileChosen">
+        <span id="fileName">responses.csv</span>
+        <button class="ghost-btn" type="button" onclick="clearFile()">Remove</button>
+      </div>
+      <div class="error" id="csvErr"></div>
+      <button class="analyze-btn" id="csvBtn" type="button" onclick="analyzeCSV()">
+        <span class="btn-label">Analyze CSV Responses</span>
+        <span class="spinner"></span>
+      </button>
+    </div>
+
+    <div class="tab-panel" id="sheetsPanel">
+      <div class="steps">
+        <article class="step"><strong>1</strong><h4>Enable link access</h4><p>Make sure the sheet is shared for anyone with the link.</p></article>
+        <article class="step"><strong>2</strong><h4>Paste the URL</h4><p>Use the full Google Sheets share link.</p></article>
+        <article class="step"><strong>3</strong><h4>Run analysis</h4><p>EduSense fetches the sheet and builds the dashboard automatically.</p></article>
+      </div>
+      <div class="input-wrap">
+        <input type="url" id="sheetsUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
+      </div>
+      <div class="error" id="sheetsErr"></div>
+      <button class="analyze-btn" id="sheetsBtn" type="button" onclick="analyzeSheets()">
+        <span class="btn-label">Analyze Google Sheet</span>
+        <span class="spinner"></span>
+      </button>
+    </div>
+  </section>
+
+  <section id="resultsSection">
+    <div class="results fade-up">
+      <div class="results-top">
+        <div>
+          <span class="meta">Results</span>
+          <h2>Clean summary, ready to share</h2>
+          <p id="resultsMeta">Run an analysis to populate this dashboard.</p>
+        </div>
+        <button class="export-btn" type="button" onclick="exportCSV()">Export Results CSV</button>
+      </div>
+
+      <div class="stats">
+        <article class="stat"><span>Total Responses</span><strong id="statTotal">0</strong><p>Total rows analyzed.</p></article>
+        <article class="stat"><span>Positive</span><strong id="statPos">0</strong><p id="statPosPct">0% of responses</p></article>
+        <article class="stat"><span>Negative</span><strong id="statNeg">0</strong><p id="statNegPct">0% of responses</p></article>
+        <article class="stat"><span>Avg Confidence</span><strong id="statConf">0%</strong><p>Average model confidence.</p></article>
+      </div>
+
+      <div class="suggestions-box">
+        <div class="suggestions-head">
+          <div>
+            <span class="meta">Suggestions</span>
+            <h3>What this dataset indicates</h3>
+          </div>
+        </div>
+        <div class="suggestions-grid" id="suggestionsGrid">
+          <article class="suggestion-item">
+            <strong>Response volume</strong>
+            <p>Run an analysis to see whether the response count is enough for a stable read.</p>
+          </article>
+          <article class="suggestion-item">
+            <strong>Confidence level</strong>
+            <p>Average confidence and sentiment spread will generate reliability guidance here.</p>
+          </article>
+          <article class="suggestion-item">
+            <strong>Recommended action</strong>
+            <p>You'll get a next-step suggestion after processing the dataset.</p>
+          </article>
+        </div>
+      </div>
+
+      <div class="results-grid">
+        <article class="chart-card">
+          <span class="meta">Sentiment Mix</span>
+          <div class="donut-wrap">
+            <div class="donut">
+              <svg width="220" height="220" viewBox="0 0 220 220" aria-hidden="true">
+                <circle class="track" cx="110" cy="110" r="72" fill="none" stroke-width="16"></circle>
+                <circle class="segment pos" id="donutPos" cx="110" cy="110" r="72" fill="none" stroke-width="16"></circle>
+                <circle class="segment neg" id="donutNeg" cx="110" cy="110" r="72" fill="none" stroke-width="16"></circle>
+              </svg>
+              <div class="donut-center">
+                <strong id="donutPct">0%</strong>
+                <span>positive</span>
+              </div>
+            </div>
+          </div>
+          <div class="legend">
+            <div class="legend-row">
+              <div class="dot pos"></div>
+              <div>Positive</div>
+              <div class="bar"><div class="fill pos" id="legendPosBar"></div></div>
+              <div class="pct" id="legendPosPct">0%</div>
+            </div>
+            <div class="legend-row">
+              <div class="dot neg"></div>
+              <div>Negative</div>
+              <div class="bar"><div class="fill neg" id="legendNegBar"></div></div>
+              <div class="pct" id="legendNegPct">0%</div>
+            </div>
+          </div>
+        </article>
+
+        <article class="table-card">
+          <div class="table-top">
+            <div>
+              <span class="meta">Detailed Responses</span>
+              <h3 style="margin-top:0.4rem;">Every analyzed row <span id="tableCount" style="color:var(--muted);font-size:0.95rem;font-family:Manrope,sans-serif;"></span></h3>
+            </div>
+            <div class="filters">
+              <button class="filter-btn active" type="button" onclick="filterTable('all', this)">All</button>
+              <button class="filter-btn" type="button" onclick="filterTable('pos', this)">Positive</button>
+              <button class="filter-btn" type="button" onclick="filterTable('neg', this)">Negative</button>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Feedback</th>
+                  <th>Sentiment</th>
+                  <th>Confidence</th>
+                  <th>Keywords</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="pagination"></div>
+        </article>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+  let allResults = [];
+  let filtered = [];
+  let currentPage = 1;
+  const PER_PAGE = 15;
+  let chosenFile = null;
+
+  const dropZone = document.getElementById("dropZone");
+  dropZone.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    dropZone.classList.add("dragover");
+  });
+  dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+  dropZone.addEventListener("drop", (event) => {
+    event.preventDefault();
+    dropZone.classList.remove("dragover");
+    const file = event.dataTransfer.files[0];
+    if (file && file.name.toLowerCase().endsWith(".csv")) {
+      setFile(file);
+    }
+  });
+
+  function switchTab(tab) {
+    const csv = tab === "csv";
+    document.getElementById("csvTab").classList.toggle("active", csv);
+    document.getElementById("sheetsTab").classList.toggle("active", !csv);
+    document.getElementById("csvPanel").classList.toggle("active", csv);
+    document.getElementById("sheetsPanel").classList.toggle("active", !csv);
+  }
+
+  function onFileChosen(input) {
+    if (input.files[0]) {
+      setFile(input.files[0]);
+    }
+  }
+
+  function setFile(file) {
+    chosenFile = file;
+    document.getElementById("fileName").textContent = file.name;
+    document.getElementById("fileChosen").classList.add("show");
+  }
+
+  function clearFile() {
+    chosenFile = null;
+    document.getElementById("csvFile").value = "";
+    document.getElementById("fileChosen").classList.remove("show");
+  }
+
+  async function analyzeCSV() {
+    if (!chosenFile) {
+      showErr("csvErr", "Please select a CSV file first.");
+      return;
+    }
+
+    hideErr("csvErr");
+    const button = document.getElementById("csvBtn");
+    setLoading(button, true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", chosenFile);
+      const response = await fetch("/analyze-csv", { method: "POST", body: formData });
+      const data = await response.json();
+      if (data.error) {
+        showErr("csvErr", data.error);
+        return;
+      }
+      renderResults(data);
+    } catch (error) {
+      showErr("csvErr", "Could not connect to the analyzer service. Make sure `app.py` is running and try again.");
+    } finally {
+      setLoading(button, false);
+    }
+  }
+
+  async function analyzeSheets() {
+    const url = document.getElementById("sheetsUrl").value.trim();
+    if (!url) {
+      showErr("sheetsErr", "Please paste a Google Sheets URL.");
+      return;
+    }
+
+    hideErr("sheetsErr");
+    const button = document.getElementById("sheetsBtn");
+    setLoading(button, true);
+
+    try {
+      const response = await fetch("/analyze-sheets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url })
+      });
+      const data = await response.json();
+      if (data.error) {
+        showErr("sheetsErr", data.error);
+        return;
+      }
+      renderResults(data);
+    } catch (error) {
+      showErr("sheetsErr", "Could not connect to the analyzer service. Make sure `app.py` is running and try again.");
+    } finally {
+      setLoading(button, false);
+    }
+  }
+
+  function renderResults(data) {
+    allResults = data.results;
+    filtered = [...allResults];
+    currentPage = 1;
+
+    const summary = data.summary;
+    document.getElementById("statTotal").textContent = summary.total;
+    document.getElementById("statPos").textContent = summary.positive_count;
+    document.getElementById("statNeg").textContent = summary.negative_count;
+    document.getElementById("statConf").textContent = summary.avg_confidence + "%";
+    document.getElementById("statPosPct").textContent = summary.positive_pct + "% of responses";
+    document.getElementById("statNegPct").textContent = summary.negative_pct + "% of responses";
+    document.getElementById("resultsMeta").textContent = `Column analyzed: "${data.column}" | ${summary.total} responses`;
+
+    const circumference = 2 * Math.PI * 72;
+    const posArc = (summary.positive_pct / 100) * circumference;
+    const negArc = (summary.negative_pct / 100) * circumference;
+
+    requestAnimationFrame(() => {
+      document.getElementById("donutPos").setAttribute("stroke-dasharray", `${posArc} ${circumference}`);
+      document.getElementById("donutNeg").setAttribute("stroke-dasharray", `${negArc} ${circumference}`);
+      document.getElementById("donutNeg").setAttribute("stroke-dashoffset", `-${posArc}`);
+      document.getElementById("legendPosBar").style.width = summary.positive_pct + "%";
+      document.getElementById("legendNegBar").style.width = summary.negative_pct + "%";
+    });
+
+    document.getElementById("donutPct").textContent = summary.positive_pct + "%";
+    document.getElementById("legendPosPct").textContent = summary.positive_pct + "%";
+    document.getElementById("legendNegPct").textContent = summary.negative_pct + "%";
+    renderSuggestions(data.suggestions, summary);
+
+    const section = document.getElementById("resultsSection");
+    section.style.display = "block";
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+    renderTable();
+  }
+
+  function renderSuggestions(apiSuggestions, summary) {
+    if (Array.isArray(apiSuggestions) && apiSuggestions.length) {
+      const node = document.getElementById("suggestionsGrid");
+      node.innerHTML = apiSuggestions.map((item) => `
+        <article class="suggestion-item">
+          <strong>${escapeHtml(item.title || "Suggestion")}</strong>
+          <p>${escapeHtml(item.description || "")}</p>
+        </article>
+      `).join("");
+      return;
+    }
+
+    // Fallback for older backend responses without `suggestions`.
+    const total = summary.total;
+    const confidence = summary.avg_confidence;
+    const sentimentGap = Math.abs(summary.positive_pct - summary.negative_pct);
+
+    let volumeText = "Response count is still low. Collect more feedback for stronger trend confidence.";
+    if (total >= 30 && total < 100) {
+      volumeText = "Response volume is moderate and generally usable for directional decisions.";
+    } else if (total >= 100) {
+      volumeText = "Response volume is strong. You can treat this trend as broadly representative.";
+    }
+
+    let confidenceText = "Model confidence is low. Review ambiguous comments manually before final conclusions.";
+    if (confidence >= 70 && confidence < 85) {
+      confidenceText = "Model confidence is solid for high-level reporting, with selective manual checks.";
+    } else if (confidence >= 85) {
+      confidenceText = "Model confidence is high. This output is reliable for executive-style summaries.";
+    }
+
+    let actionText = "Sentiment is mixed. Review negative comments and identify repeated friction themes.";
+    if (sentimentGap >= 30 && summary.positive_pct > summary.negative_pct) {
+      actionText = "Sentiment is clearly positive. Preserve what works and address isolated negative themes.";
+    } else if (sentimentGap >= 30 && summary.negative_pct > summary.positive_pct) {
+      actionText = "Sentiment is clearly negative. Prioritize immediate interventions and follow-up communication.";
+    }
+
+    const node = document.getElementById("suggestionsGrid");
+    node.innerHTML = `
+      <article class="suggestion-item">
+        <strong>Response volume (${total})</strong>
+        <p>${volumeText}</p>
+      </article>
+      <article class="suggestion-item">
+        <strong>Confidence (${confidence}%)</strong>
+        <p>${confidenceText}</p>
+      </article>
+      <article class="suggestion-item">
+        <strong>Recommended action</strong>
+        <p>${actionText}</p>
+      </article>
+    `;
+  }
+
+  function filterTable(type, button) {
+    document.querySelectorAll(".filter-btn").forEach((node) => node.classList.remove("active"));
+    button.classList.add("active");
+    filtered = type === "all"
+      ? [...allResults]
+      : allResults.filter((row) => (type === "pos") === (row.sentiment === "Positive"));
+    currentPage = 1;
+    renderTable();
+  }
+
+  function renderTable() {
+    const start = (currentPage - 1) * PER_PAGE;
+    const page = filtered.slice(start, start + PER_PAGE);
+    const tbody = document.getElementById("tableBody");
+    tbody.innerHTML = "";
+    document.getElementById("tableCount").textContent = `(${filtered.length})`;
+
+    page.forEach((row, index) => {
+      const positive = row.sentiment === "Positive";
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${start + index + 1}</td>
+        <td class="feedback-cell" title="${escapeHtml(row.feedback)}">${escapeHtml(row.feedback)}</td>
+        <td><span class="pill ${positive ? "pos" : "neg"}">${row.sentiment}</span></td>
+        <td>${row.confidence}%</td>
+        <td>${row.keywords.length ? escapeHtml(row.keywords.slice(0, 3).join(", ")) : "-"}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    renderPagination();
+  }
+
+  function renderPagination() {
+    const totalPages = Math.ceil(filtered.length / PER_PAGE);
+    const pagination = document.getElementById("pagination");
+    pagination.innerHTML = "";
+    if (totalPages <= 1) return;
+
+    const addButton = (label, page, active = false) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "page-btn" + (active ? " active" : "");
+      btn.textContent = label;
+      btn.onclick = () => {
+        currentPage = page;
+        renderTable();
+      };
+      pagination.appendChild(btn);
+    };
+
+    if (currentPage > 1) addButton("<", currentPage - 1);
+    for (let page = Math.max(1, currentPage - 2); page <= Math.min(totalPages, currentPage + 2); page += 1) {
+      addButton(page, page, page === currentPage);
+    }
+    if (currentPage < totalPages) addButton(">", currentPage + 1);
+  }
+
+  function exportCSV() {
+    if (!allResults.length) return;
+
+    const rows = [["#", "Feedback", "Sentiment", "Confidence (%)", "Keywords"]];
+    allResults.forEach((row, index) => {
+      rows.push([
+        index + 1,
+        `"${row.feedback.replace(/"/g, '""')}"`,
+        row.sentiment,
+        row.confidence,
+        row.keywords.join("; ")
+      ]);
+    });
+
+    const csv = rows.map((row) => row.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "edusense_results.csv";
+    link.click();
+  }
+
+  function showErr(id, message) {
+    const node = document.getElementById(id);
+    node.textContent = message;
+    node.style.display = "block";
+  }
+
+  function hideErr(id) {
+    document.getElementById(id).style.display = "none";
+  }
+
+  function setLoading(button, active) {
+    button.disabled = active;
+    button.classList.toggle("loading", active);
+  }
+
+  function escapeHtml(text) {
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+</script>
+</body>
+</html>
