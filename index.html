@@ -172,7 +172,7 @@
                 <div class="group bg-white border border-slate-100 hover:border-indigo-200 rounded-3xl p-10 transition-all hover:shadow-2xl">
                     <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl mb-8">📊</div>
                     <h3 class="heading-font text-3xl font-semibold">Instant Sentiment</h3>
-                    <p class="mt-4 text-slate-600 leading-relaxed">Single response or 200-row CSV — get positive/negative scores, confidence %, and top keywords in under 300ms.</p>
+                    <p class="mt-4 text-slate-600 leading-relaxed">Single response or 200-row CSV — get bad/good/excellent scores, confidence %, and top keywords in under 300ms.</p>
                 </div>
                 
                 <!-- Card 2 -->
@@ -232,7 +232,7 @@
                                      class="w-20 h-20 rounded-3xl flex items-center justify-center text-6xl font-bold text-white shadow-inner">+</div>
                                 <div>
                                     <span class="text-xs font-medium tracking-widest text-slate-500">SENTIMENT</span>
-                                    <div id="verdictLabel" class="heading-font text-5xl font-bold">Positive</div>
+                                    <div id="verdictLabel" class="heading-font text-5xl font-bold">Good</div>
                                 </div>
                             </div>
                             
@@ -245,18 +245,25 @@
                         <!-- Score bars -->
                         <div class="mt-12 space-y-6">
                             <div class="flex items-center gap-x-5">
-                                <span class="w-20 text-emerald-600 font-medium">Positive</span>
+                                <span class="w-20 text-rose-600 font-medium">Bad</span>
                                 <div class="flex-1 h-3 bg-slate-100 rounded-3xl overflow-hidden">
-                                    <div id="posBar" class="bar h-full bg-emerald-500 rounded-3xl w-0"></div>
+                                    <div id="badBar" class="bar h-full bg-rose-500 rounded-3xl w-0"></div>
                                 </div>
-                                <span id="posVal" class="font-mono w-12 text-right">92%</span>
+                                <span id="badVal" class="font-mono w-12 text-right">8%</span>
                             </div>
                             <div class="flex items-center gap-x-5">
-                                <span class="w-20 text-rose-600 font-medium">Negative</span>
+                                <span class="w-20 text-emerald-600 font-medium">Good</span>
                                 <div class="flex-1 h-3 bg-slate-100 rounded-3xl overflow-hidden">
-                                    <div id="negBar" class="bar h-full bg-rose-500 rounded-3xl w-0"></div>
+                                    <div id="goodBar" class="bar h-full bg-emerald-500 rounded-3xl w-0"></div>
                                 </div>
-                                <span id="negVal" class="font-mono w-12 text-right">8%</span>
+                                <span id="goodVal" class="font-mono w-12 text-right">60%</span>
+                            </div>
+                            <div class="flex items-center gap-x-5">
+                                <span class="w-20 text-indigo-600 font-medium">Excellent</span>
+                                <div class="flex-1 h-3 bg-slate-100 rounded-3xl overflow-hidden">
+                                    <div id="excellentBar" class="bar h-full bg-indigo-500 rounded-3xl w-0"></div>
+                                </div>
+                                <span id="excellentVal" class="font-mono w-12 text-right">32%</span>
                             </div>
                         </div>
                         
@@ -387,6 +394,16 @@
             charCount.textContent = `${count} / 500`;
         });
 
+        function getToneConfig(sentiment) {
+            if (sentiment === "Bad") {
+                return { icon: "−", iconClass: "bg-rose-500", textClass: "text-rose-600" };
+            }
+            if (sentiment === "Excellent") {
+                return { icon: "★", iconClass: "bg-indigo-500", textClass: "text-indigo-600" };
+            }
+            return { icon: "+", iconClass: "bg-emerald-500", textClass: "text-emerald-600" };
+        }
+
         // Analyze handler (unchanged backend call)
         analyzeBtn.addEventListener("click", analyzeFeedback);
         textarea.addEventListener("keydown", (e) => {
@@ -430,28 +447,28 @@
         }
 
         function renderResult(data) {
-            const isPositive = data.sentiment === "Positive";
+            const tone = getToneConfig(data.sentiment);
             
             // Verdict icon
             const icon = document.getElementById("verdictIcon");
-            icon.textContent = isPositive ? "+" : "−";
+            icon.textContent = tone.icon;
             icon.className = `w-20 h-20 rounded-3xl flex items-center justify-center text-6xl font-bold text-white shadow-inner ${
-                isPositive ? "bg-emerald-500" : "bg-rose-500"
+                tone.iconClass
             }`;
             
             document.getElementById("verdictLabel").textContent = data.sentiment;
-            document.getElementById("verdictLabel").className = `heading-font text-5xl font-bold ${isPositive ? "text-emerald-600" : "text-rose-600"}`;
+            document.getElementById("verdictLabel").className = `heading-font text-5xl font-bold ${tone.textClass}`;
             
             document.getElementById("confidenceVal").textContent = data.confidence + "%";
-            document.getElementById("posVal").textContent = data.pos_score + "%";
-            document.getElementById("negVal").textContent = data.neg_score + "%";
+            document.getElementById("badVal").textContent = data.bad_score + "%";
+            document.getElementById("goodVal").textContent = data.good_score + "%";
+            document.getElementById("excellentVal").textContent = data.excellent_score + "%";
             document.getElementById("feedbackEcho").textContent = `"${data.feedback}"`;
             
             // Bars
-            const posBar = document.getElementById("posBar");
-            const negBar = document.getElementById("negBar");
-            posBar.style.width = data.pos_score + "%";
-            negBar.style.width = data.neg_score + "%";
+            document.getElementById("badBar").style.width = data.bad_score + "%";
+            document.getElementById("goodBar").style.width = data.good_score + "%";
+            document.getElementById("excellentBar").style.width = data.excellent_score + "%";
             
             // Keywords
             const chipsContainer = document.getElementById("keywordChips");
@@ -481,14 +498,20 @@
             history.forEach(item => {
                 const el = document.createElement("div");
                 el.className = "flex gap-4 bg-slate-50 border border-slate-100 rounded-2xl p-5 items-start";
+                const historyTone = getToneConfig(item.sentiment);
+                const chipClass = item.sentiment === "Bad"
+                    ? "bg-rose-100 text-rose-700"
+                    : item.sentiment === "Excellent"
+                        ? "bg-indigo-100 text-indigo-700"
+                        : "bg-emerald-100 text-emerald-700";
                 el.innerHTML = `
-                    <div class="${item.sentiment === 'Positive' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'} w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-xl flex-shrink-0">${item.sentiment === 'Positive' ? '+' : '−'}</div>
+                    <div class="${historyTone.iconClass.replace('bg-', 'bg-').replace('500', '100')} ${historyTone.textClass} w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-xl flex-shrink-0">${historyTone.icon}</div>
                     <div class="flex-1 min-w-0">
                         <div class="flex justify-between">
                             <p class="font-medium text-sm line-clamp-1">${item.text}</p>
                             <span class="font-mono text-xs text-slate-400">${item.confidence}%</span>
                         </div>
-                        <span class="inline-block mt-2 px-4 py-1 text-xs rounded-3xl ${item.sentiment === 'Positive' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${item.sentiment}</span>
+                        <span class="inline-block mt-2 px-4 py-1 text-xs rounded-3xl ${chipClass}">${item.sentiment}</span>
                     </div>
                 `;
                 historyList.appendChild(el);

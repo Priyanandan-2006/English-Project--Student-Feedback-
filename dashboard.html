@@ -245,6 +245,27 @@
     line-height: 1.7;
     font-size: 0.95rem;
   }
+  .teacher-tips-box {
+    margin-top: 1rem;
+    padding: 1.15rem;
+    border-radius: 24px;
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(246,250,255,0.92));
+  }
+  .teacher-tips-list {
+    margin-top: 0.85rem;
+    display: grid;
+    gap: 0.7rem;
+  }
+  .teacher-tip-item {
+    padding: 0.85rem 0.9rem;
+    border-radius: 14px;
+    border: 1px solid rgba(15,23,42,0.08);
+    background: rgba(255,255,255,0.86);
+    color: var(--muted);
+    line-height: 1.7;
+    font-size: 0.95rem;
+  }
   .results-grid {
     display: grid; grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr); gap: 1rem; margin-top: 1rem;
   }
@@ -302,8 +323,9 @@
     display: inline-flex; align-items: center; padding: 0.45rem 0.75rem;
     border-radius: 999px; font-size: 0.8rem; font-weight: 800;
   }
-  .pill.pos { background: rgba(15,159,140,0.1); color: #0c7b6d; }
-  .pill.neg { background: rgba(217,72,95,0.1); color: #b4233c; }
+  .pill.bad { background: rgba(217,72,95,0.1); color: #b4233c; }
+  .pill.good { background: rgba(15,159,140,0.1); color: #0c7b6d; }
+  .pill.excellent { background: rgba(37,99,235,0.12); color: #1d4ed8; }
   .pagination { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
   .page-btn {
     min-width: 42px; height: 42px; border-radius: 14px; cursor: pointer;
@@ -442,8 +464,9 @@
 
       <div class="stats">
         <article class="stat"><span>Total Responses</span><strong id="statTotal">0</strong><p>Total rows analyzed.</p></article>
-        <article class="stat"><span>Positive</span><strong id="statPos">0</strong><p id="statPosPct">0% of responses</p></article>
-        <article class="stat"><span>Negative</span><strong id="statNeg">0</strong><p id="statNegPct">0% of responses</p></article>
+        <article class="stat"><span>Bad</span><strong id="statBad">0</strong><p id="statBadPct">0% of responses</p></article>
+        <article class="stat"><span>Good</span><strong id="statGood">0</strong><p id="statGoodPct">0% of responses</p></article>
+        <article class="stat"><span>Excellent</span><strong id="statExcellent">0</strong><p id="statExcellentPct">0% of responses</p></article>
         <article class="stat"><span>Avg Confidence</span><strong id="statConf">0%</strong><p>Average model confidence.</p></article>
       </div>
 
@@ -470,6 +493,18 @@
         </div>
       </div>
 
+      <div class="teacher-tips-box">
+        <div class="suggestions-head">
+          <div>
+            <span class="meta">Teacher Tips</span>
+            <h3>How to improve negative feedback</h3>
+          </div>
+        </div>
+        <div class="teacher-tips-list" id="teacherTipsList">
+          <article class="teacher-tip-item">Run an analysis to generate targeted improvement tips for teachers.</article>
+        </div>
+      </div>
+
       <div class="results-grid">
         <article class="chart-card">
           <span class="meta">Sentiment Mix</span>
@@ -482,20 +517,20 @@
               </svg>
               <div class="donut-center">
                 <strong id="donutPct">0%</strong>
-                <span>positive</span>
+                <span>good + excellent</span>
               </div>
             </div>
           </div>
           <div class="legend">
             <div class="legend-row">
               <div class="dot pos"></div>
-              <div>Positive</div>
+              <div>Good + Excellent</div>
               <div class="bar"><div class="fill pos" id="legendPosBar"></div></div>
               <div class="pct" id="legendPosPct">0%</div>
             </div>
             <div class="legend-row">
               <div class="dot neg"></div>
-              <div>Negative</div>
+              <div>Bad</div>
               <div class="bar"><div class="fill neg" id="legendNegBar"></div></div>
               <div class="pct" id="legendNegPct">0%</div>
             </div>
@@ -510,8 +545,9 @@
             </div>
             <div class="filters">
               <button class="filter-btn active" type="button" onclick="filterTable('all', this)">All</button>
-              <button class="filter-btn" type="button" onclick="filterTable('pos', this)">Positive</button>
-              <button class="filter-btn" type="button" onclick="filterTable('neg', this)">Negative</button>
+              <button class="filter-btn" type="button" onclick="filterTable('bad', this)">Bad</button>
+              <button class="filter-btn" type="button" onclick="filterTable('good', this)">Good</button>
+              <button class="filter-btn" type="button" onclick="filterTable('excellent', this)">Excellent</button>
             </div>
           </div>
           <div class="table-scroll">
@@ -647,29 +683,32 @@
 
     const summary = data.summary;
     document.getElementById("statTotal").textContent = summary.total;
-    document.getElementById("statPos").textContent = summary.positive_count;
-    document.getElementById("statNeg").textContent = summary.negative_count;
+    document.getElementById("statBad").textContent = summary.bad_count;
+    document.getElementById("statGood").textContent = summary.good_count;
+    document.getElementById("statExcellent").textContent = summary.excellent_count;
     document.getElementById("statConf").textContent = summary.avg_confidence + "%";
-    document.getElementById("statPosPct").textContent = summary.positive_pct + "% of responses";
-    document.getElementById("statNegPct").textContent = summary.negative_pct + "% of responses";
+    document.getElementById("statBadPct").textContent = summary.bad_pct + "% of responses";
+    document.getElementById("statGoodPct").textContent = summary.good_pct + "% of responses";
+    document.getElementById("statExcellentPct").textContent = summary.excellent_pct + "% of responses";
     document.getElementById("resultsMeta").textContent = `Column analyzed: "${data.column}" | ${summary.total} responses`;
 
     const circumference = 2 * Math.PI * 72;
-    const posArc = (summary.positive_pct / 100) * circumference;
-    const negArc = (summary.negative_pct / 100) * circumference;
+    const strongArc = ((summary.good_pct + summary.excellent_pct) / 100) * circumference;
+    const badArc = (summary.bad_pct / 100) * circumference;
 
     requestAnimationFrame(() => {
-      document.getElementById("donutPos").setAttribute("stroke-dasharray", `${posArc} ${circumference}`);
-      document.getElementById("donutNeg").setAttribute("stroke-dasharray", `${negArc} ${circumference}`);
-      document.getElementById("donutNeg").setAttribute("stroke-dashoffset", `-${posArc}`);
-      document.getElementById("legendPosBar").style.width = summary.positive_pct + "%";
-      document.getElementById("legendNegBar").style.width = summary.negative_pct + "%";
+      document.getElementById("donutPos").setAttribute("stroke-dasharray", `${strongArc} ${circumference}`);
+      document.getElementById("donutNeg").setAttribute("stroke-dasharray", `${badArc} ${circumference}`);
+      document.getElementById("donutNeg").setAttribute("stroke-dashoffset", `-${strongArc}`);
+      document.getElementById("legendPosBar").style.width = (summary.good_pct + summary.excellent_pct) + "%";
+      document.getElementById("legendNegBar").style.width = summary.bad_pct + "%";
     });
 
-    document.getElementById("donutPct").textContent = summary.positive_pct + "%";
-    document.getElementById("legendPosPct").textContent = summary.positive_pct + "%";
-    document.getElementById("legendNegPct").textContent = summary.negative_pct + "%";
+    document.getElementById("donutPct").textContent = (summary.good_pct + summary.excellent_pct) + "%";
+    document.getElementById("legendPosPct").textContent = (summary.good_pct + summary.excellent_pct) + "%";
+    document.getElementById("legendNegPct").textContent = summary.bad_pct + "%";
     renderSuggestions(data.suggestions, summary);
+    renderTeacherTips(data.teacher_tips, data.results);
 
     const section = document.getElementById("resultsSection");
     section.style.display = "block";
@@ -692,7 +731,9 @@
     // Fallback for older backend responses without `suggestions`.
     const total = summary.total;
     const confidence = summary.avg_confidence;
-    const sentimentGap = Math.abs(summary.positive_pct - summary.negative_pct);
+    const strengthPct = (summary.good_pct || 0) + (summary.excellent_pct || 0);
+    const weaknessPct = summary.bad_pct || 0;
+    const sentimentGap = Math.abs(strengthPct - weaknessPct);
 
     let volumeText = "Response count is still low. Collect more feedback for stronger trend confidence.";
     if (total >= 30 && total < 100) {
@@ -708,10 +749,10 @@
       confidenceText = "Model confidence is high. This output is reliable for executive-style summaries.";
     }
 
-    let actionText = "Sentiment is mixed. Review negative comments and identify repeated friction themes.";
-    if (sentimentGap >= 30 && summary.positive_pct > summary.negative_pct) {
-      actionText = "Sentiment is clearly positive. Preserve what works and address isolated negative themes.";
-    } else if (sentimentGap >= 30 && summary.negative_pct > summary.positive_pct) {
+    let actionText = "Sentiment is mixed. Review bad comments and identify repeated friction themes.";
+    if (sentimentGap >= 30 && strengthPct > weaknessPct) {
+      actionText = "Quality trend is clearly positive. Preserve what works and address isolated weak themes.";
+    } else if (sentimentGap >= 30 && weaknessPct > strengthPct) {
       actionText = "Sentiment is clearly negative. Prioritize immediate interventions and follow-up communication.";
     }
 
@@ -732,12 +773,42 @@
     `;
   }
 
+  function renderTeacherTips(apiTips, results) {
+    const listNode = document.getElementById("teacherTipsList");
+    let tips = [];
+
+    if (Array.isArray(apiTips) && apiTips.length) {
+      tips = apiTips;
+    } else {
+      // Frontend fallback if backend field is unavailable.
+      const badCount = (results || []).filter((row) => row.sentiment === "Bad").length;
+      if (badCount === 0) {
+        tips = [
+          "Keep reinforcing successful teaching patterns and maintain regular feedback check-ins.",
+          "Share one high-performing classroom strategy with your team this week."
+        ];
+      } else {
+        tips = [
+          "Review top negative comments and select the top two recurring issues to fix first.",
+          "Use quick comprehension checks and recap blocks to improve clarity and pacing.",
+          "Close the loop with students by sharing what changes you are making next class."
+        ];
+      }
+    }
+
+    listNode.innerHTML = tips.map((tip) => `
+      <article class="teacher-tip-item">${escapeHtml(tip)}</article>
+    `).join("");
+  }
+
   function filterTable(type, button) {
     document.querySelectorAll(".filter-btn").forEach((node) => node.classList.remove("active"));
     button.classList.add("active");
-    filtered = type === "all"
-      ? [...allResults]
-      : allResults.filter((row) => (type === "pos") === (row.sentiment === "Positive"));
+    if (type === "all") {
+      filtered = [...allResults];
+    } else {
+      filtered = allResults.filter((row) => row.sentiment.toLowerCase() === type);
+    }
     currentPage = 1;
     renderTable();
   }
@@ -750,12 +821,12 @@
     document.getElementById("tableCount").textContent = `(${filtered.length})`;
 
     page.forEach((row, index) => {
-      const positive = row.sentiment === "Positive";
+      const sentimentClass = row.sentiment.toLowerCase();
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${start + index + 1}</td>
         <td class="feedback-cell" title="${escapeHtml(row.feedback)}">${escapeHtml(row.feedback)}</td>
-        <td><span class="pill ${positive ? "pos" : "neg"}">${row.sentiment}</span></td>
+        <td><span class="pill ${sentimentClass}">${row.sentiment}</span></td>
         <td>${row.confidence}%</td>
         <td>${row.keywords.length ? escapeHtml(row.keywords.slice(0, 3).join(", ")) : "-"}</td>
       `;

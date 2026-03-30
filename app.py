@@ -8,6 +8,7 @@
 
 import re, io, warnings, os, json, sqlite3
 from datetime import datetime
+from collections import Counter
 warnings.filterwarnings("ignore")
 
 import pandas as pd
@@ -129,8 +130,14 @@ def analyze_text(text):
     vector     = vectorizer.transform([cleaned])
     prediction = model.predict(vector)[0]
     proba      = model.predict_proba(vector)[0]
-    pos_score  = round(float(proba[1]) * 100, 1)
-    neg_score  = round(float(proba[0]) * 100, 1)
+    pos_prob   = float(proba[1])
+    neg_prob   = float(proba[0])
+
+    # Convert binary probability into 3 tiers:
+    # Bad (negative), Good (moderately positive), Excellent (highly positive).
+    bad_score       = round(neg_prob * 100, 1)
+    excellent_score = round(max(0.0, (pos_prob - 0.55) / 0.45) * 100, 1)
+    good_score      = round(max(0.0, (pos_prob * 100) - excellent_score), 1)
     confidence = round(float(max(proba)) * 100, 1)
 
     feature_names = vectorizer.get_feature_names_out()
@@ -138,11 +145,22 @@ def analyze_text(text):
     top_indices   = tfidf_scores.argsort()[::-1][:5]
     keywords      = [feature_names[i] for i in top_indices if tfidf_scores[i] > 0]
 
+    tier_scores = {
+        "Bad": bad_score,
+        "Good": good_score,
+        "Excellent": excellent_score,
+    }
+    sentiment = max(tier_scores, key=tier_scores.get)
+
     return {
-        "sentiment"  : "Positive" if prediction == 1 else "Negative",
+        "sentiment"  : sentiment,
         "confidence" : confidence,
-        "pos_score"  : pos_score,
-        "neg_score"  : neg_score,
+        "bad_score"  : bad_score,
+        "good_score" : good_score,
+        "excellent_score": excellent_score,
+        # Backward-compatible aliases used by older frontend blocks.
+        "pos_score"  : round(good_score + excellent_score, 1),
+        "neg_score"  : bad_score,
         "keywords"   : keywords,
         "feedback"   : text,
     }
@@ -150,11 +168,21 @@ def analyze_text(text):
 # ── Helper: summary stats ─────────────────────────────────────
 def build_summary(results):
     total    = len(results)
-    pos      = sum(1 for r in results if r['sentiment'] == 'Positive')
-    neg      = total - pos
+    bad      = sum(1 for r in results if r['sentiment'] == 'Bad')
+    good     = sum(1 for r in results if r['sentiment'] == 'Good')
+    excellent= sum(1 for r in results if r['sentiment'] == 'Excellent')
+    pos      = good + excellent
+    neg      = bad
     avg_conf = round(sum(r['confidence'] for r in results) / total, 1) if total else 0
     return {
         "total"          : total,
+        "bad_count"      : bad,
+        "good_count"     : good,
+        "excellent_count": excellent,
+        "bad_pct"        : round(bad / total * 100, 1) if total else 0,
+        "good_pct"       : round(good / total * 100, 1) if total else 0,
+        "excellent_pct"  : round(excellent / total * 100, 1) if total else 0,
+        # Compatibility fields.
         "positive_count" : pos,
         "negative_count" : neg,
         "positive_pct"   : round(pos / total * 100, 1) if total else 0,
@@ -201,6 +229,55 @@ def build_suggestions(summary):
             "description": action_text,
         },
     ]
+
+def build_teacher_tips(results, summary):
+    bad_rows = [r for r in results if r.get("sentiment") == "Bad"]
+    if not bad_rows:
+        return [
+            "Great momentum. Keep collecting quick pulse feedback and reinforce the strategies students already value.",
+            "Share one successful teaching practice with your team so positive outcomes scale across classes.",
+            "Continue checking pacing and clarity regularly to maintain strong student confidence."
+        ]
+
+    keyword_counter = Counter()
+    for row in bad_rows:
+        for kw in row.get("keywords", []):
+            keyword_counter[kw] += 1
+
+    # Map recurring issue signals to concrete coaching tips.
+    tip_map = {
+        "confus": "Clarify one concept at a time: start each topic with a simple example, then move to advanced detail.",
+        "unclear": "Make instructions explicit: provide assignment rubrics and one worked sample before students start.",
+        "fast": "Slow pacing in high-friction lessons: add recap pauses every 10–15 minutes and quick comprehension checks.",
+        "bor": "Increase engagement: use short interactive activities, polls, or pair discussions during lectures.",
+        "dull": "Vary delivery format with stories, real-world cases, and student-led mini explanations.",
+        "difficult": "Break difficult units into smaller milestones and publish a weekly 'what to focus on' guide.",
+        "struggl": "Offer targeted support hours for struggling students and follow up with short action plans.",
+        "outdat": "Refresh examples and references so students can connect learning with current real-world contexts.",
+        "vagu": "Reduce vagueness with checklists: what good work includes, common mistakes, and grading expectations.",
+        "rush": "Avoid rushed endings by reserving the last 5 minutes for recap, questions, and next-step guidance.",
+    }
+
+    tips = []
+    for keyword, _count in keyword_counter.most_common(8):
+        for signal, tip in tip_map.items():
+            if signal in keyword and tip not in tips:
+                tips.append(tip)
+                break
+        if len(tips) >= 3:
+            break
+
+    if len(tips) < 3:
+        tips.append("Review top negative comments together and prioritize the top two recurring issues for next week.")
+    if len(tips) < 3:
+        tips.append("Ask students one follow-up question: 'What one change would most improve your learning experience?'")
+    if len(tips) < 3:
+        tips.append("Close the feedback loop by telling students what will change and when.")
+
+    if summary.get("bad_pct", 0) >= 50:
+        tips.insert(0, "Urgent focus: run a short teaching reset plan for the next 2 weeks and monitor trend movement weekly.")
+
+    return tips[:4]
 
 def save_analysis_run(run_type, source_ref, analyzed_column, payload):
     summary = payload.get("summary", {})
@@ -278,8 +355,9 @@ def process_df(df):
     results = [analyze_text(r) for r in rows]
     summary = build_summary(results)
     suggestions = build_suggestions(summary)
+    teacher_tips = build_teacher_tips(results, summary)
     return feedback_col, {"column": feedback_col, "columns": list(df.columns),
-                          "summary": summary, "suggestions": suggestions, "results": results}, None
+                          "summary": summary, "suggestions": suggestions, "teacher_tips": teacher_tips, "results": results}, None
 
 # ══════════════════════════════════════════════════════════════
 #  ROUTES
@@ -295,10 +373,16 @@ def analyze():
     payload = {
         "summary": {
             "total": 1,
-            "positive_count": 1 if result["sentiment"] == "Positive" else 0,
-            "negative_count": 1 if result["sentiment"] == "Negative" else 0,
-            "positive_pct": 100.0 if result["sentiment"] == "Positive" else 0.0,
-            "negative_pct": 100.0 if result["sentiment"] == "Negative" else 0.0,
+            "bad_count": 1 if result["sentiment"] == "Bad" else 0,
+            "good_count": 1 if result["sentiment"] == "Good" else 0,
+            "excellent_count": 1 if result["sentiment"] == "Excellent" else 0,
+            "bad_pct": 100.0 if result["sentiment"] == "Bad" else 0.0,
+            "good_pct": 100.0 if result["sentiment"] == "Good" else 0.0,
+            "excellent_pct": 100.0 if result["sentiment"] == "Excellent" else 0.0,
+            "positive_count": 0 if result["sentiment"] == "Bad" else 1,
+            "negative_count": 1 if result["sentiment"] == "Bad" else 0,
+            "positive_pct": 0.0 if result["sentiment"] == "Bad" else 100.0,
+            "negative_pct": 100.0 if result["sentiment"] == "Bad" else 0.0,
             "avg_confidence": result["confidence"],
         },
         "results": [result],
