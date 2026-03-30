@@ -6,7 +6,7 @@
 #    POST /analyze-sheets   → Google Sheets public URL
 # ============================================================
 
-import re, io, warnings, os, json, sqlite3
+import re, io, warnings, os, json, sqlite3, tempfile
 from datetime import datetime
 from collections import Counter
 warnings.filterwarnings("ignore")
@@ -23,11 +23,12 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+RUNTIME_DIR = tempfile.gettempdir() if os.environ.get("VERCEL") else BASE_DIR
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 if not os.path.isdir(STATIC_DIR):
     STATIC_DIR = BASE_DIR
-DB_PATH = os.path.join(BASE_DIR, "edusense.db")
-NLTK_DATA_DIR = os.path.join(BASE_DIR, "nltk_data")
+DB_PATH = os.path.join(RUNTIME_DIR, "edusense.db")
+NLTK_DATA_DIR = os.path.join(RUNTIME_DIR, "nltk_data")
 
 if os.path.isdir(NLTK_DATA_DIR) and NLTK_DATA_DIR not in nltk.data.path:
     nltk.data.path.insert(0, NLTK_DATA_DIR)
