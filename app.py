@@ -22,13 +22,23 @@ from flask_cors import CORS
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 
-nltk.download('stopwords', quiet=True)
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 if not os.path.isdir(STATIC_DIR):
     STATIC_DIR = BASE_DIR
 DB_PATH = os.path.join(BASE_DIR, "edusense.db")
+NLTK_DATA_DIR = os.path.join(BASE_DIR, "nltk_data")
+
+if os.path.isdir(NLTK_DATA_DIR) and NLTK_DATA_DIR not in nltk.data.path:
+    nltk.data.path.insert(0, NLTK_DATA_DIR)
+
+try:
+    stop_words = set(stopwords.words('english'))
+except LookupError:
+    nltk.download('stopwords', download_dir=NLTK_DATA_DIR, quiet=True)
+    if NLTK_DATA_DIR not in nltk.data.path:
+        nltk.data.path.insert(0, NLTK_DATA_DIR)
+    stop_words = set(stopwords.words('english'))
 
 app = Flask(__name__, static_folder=STATIC_DIR)
 CORS(app)
@@ -105,7 +115,6 @@ TRAIN_LABELS = [
 
 # ── Preprocessing ─────────────────────────────────────────────
 stemmer    = PorterStemmer()
-stop_words = set(stopwords.words('english'))
 
 def preprocess(text):
     text  = str(text).lower()
@@ -466,4 +475,5 @@ def dashboard():
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=True, host='0.0.0.0', port=port)
